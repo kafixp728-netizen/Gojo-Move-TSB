@@ -1,0 +1,263 @@
+-- ==========================================
+-- TSB: GOJO SATORU MOVESET SCRIPT
+-- Character Base: The Honored One
+-- ==========================================
+
+local UserInputService = game:GetService("UserInputService")
+local Players = game:GetService("Players")
+local TweenService = game:GetService("TweenService")
+local Debris = game:GetService("Debris")
+
+local LocalPlayer = Players.LocalPlayer
+local Character = LocalPlayer.Character or LocalPlayer.CharacterAdded:Wait()
+local Humanoid = Character:WaitForChild("Humanoid")
+local HRP = Character:WaitForChild("HumanoidRootPart")
+
+-- Ability Cooldown Flags
+local Cooldowns = {
+    LapseBlue = false,
+    ReversalRed = false,
+    HollowPurple = false,
+    Infinity = false
+}
+
+-- Floating Text UI Visualizer
+local function ShowAbilityText(text, color)
+    local billboard = Instance.new("BillboardGui")
+    billboard.Size = UDim2.new(0, 200, 0, 50)
+    billboard.StudsOffset = Vector3.new(0, 3, 0)
+    billboard.Adornee = HRP
+    billboard.Parent = Character
+
+    local label = Instance.new("TextLabel")
+    label.Size = UDim2.new(1, 0, 1, 0)
+    label.BackgroundTransparency = 1
+    label.Text = text
+    label.TextColor3 = color
+    label.Font = Enum.Font.FredokaOne
+    label.TextSize = 28
+    label.TextStrokeTransparency = 0
+    label.Parent = billboard
+
+    local tweenInfo = TweenInfo.new(1.2, Enum.EasingStyle.Quart, Enum.EasingDirection.Out)
+    local tween = TweenService:Create(billboard, tweenInfo, {StudsOffset = Vector3.new(0, 6, 0)})
+    local textFade = TweenService:Create(label, tweenInfo, {TextTransparency = 1, TextStrokeTransparency = 1})
+
+    tween:Play()
+    textFade:Play()
+    Debris:AddItem(billboard, 1.2)
+end
+
+-- ==========================================
+-- MOVE 1: LAPSE BLUE (Pull & Crush)
+-- Keybind: 1
+-- ==========================================
+local function CastLapseBlue()
+    if Cooldowns.LapseBlue then return end
+    Cooldowns.LapseBlue = true
+
+    ShowAbilityText("LAPSE: BLUE", Color3.fromRGB(0, 150, 255))
+
+    -- Visual Sphere
+    local orb = Instance.new("Part")
+    orb.Shape = Enum.PartType.Ball
+    orb.Size = Vector3.new(2, 2, 2)
+    orb.Material = Enum.Material.Neon
+    orb.Color = Color3.fromRGB(0, 120, 255)
+    orb.CanCollide = false
+    orb.Anchored = true
+    orb.CFrame = HRP.CFrame * CFrame.new(0, 0, -15)
+    orb.Parent = workspace
+
+    -- Pull nearby enemies
+    for _, obj in pairs(workspace:GetChildren()) do
+        if obj:IsA("Model") and obj:FindFirstChild("HumanoidRootPart") and obj ~= Character then
+            local enemyHRP = obj.HumanoidRootPart
+            if (enemyHRP.Position - orb.Position).Magnitude <= 25 then
+                local bodyVel = Instance.new("BodyVelocity")
+                bodyVel.MaxForce = Vector3.new(1e5, 1e5, 1e5)
+                bodyVel.Velocity = (orb.Position - enemyHRP.Position).Unit * 60
+                bodyVel.Parent = enemyHRP
+                Debris:AddItem(bodyVel, 0.4)
+            end
+        end
+    end
+
+    -- Pulse expansion animation
+    local pulseTween = TweenService:Create(orb, TweenInfo.new(0.5), {Size = Vector3.new(12, 12, 12), Transparency = 1})
+    pulseTween:Play()
+    Debris:AddItem(orb, 0.5)
+
+    task.wait(4)
+    Cooldowns.LapseBlue = false
+end
+
+-- ==========================================
+-- MOVE 2: REVERSAL RED (Shockwave Blast)
+-- Keybind: 2
+-- ==========================================
+local function CastReversalRed()
+    if Cooldowns.ReversalRed then return end
+    Cooldowns.ReversalRed = true
+
+    ShowAbilityText("REVERSAL: RED", Color3.fromRGB(255, 30, 30))
+
+    local redOrb = Instance.new("Part")
+    redOrb.Shape = Enum.PartType.Ball
+    redOrb.Size = Vector3.new(3, 3, 3)
+    redOrb.Material = Enum.Material.Neon
+    redOrb.Color = Color3.fromRGB(255, 0, 50)
+    redOrb.CanCollide = false
+    redOrb.Anchored = true
+    redOrb.CFrame = HRP.CFrame * CFrame.new(0, 0, -5)
+    redOrb.Parent = workspace
+
+    task.wait(0.3)
+
+    -- Blast Forward
+    local blastTween = TweenService:Create(redOrb, TweenInfo.new(0.4, Enum.EasingStyle.Linear), {
+        CFrame = redOrb.CFrame * CFrame.new(0, 0, -40),
+        Size = Vector3.new(10, 10, 10),
+        Transparency = 1
+    })
+    blastTween:Play()
+
+    -- Knockback Logic
+    for _, obj in pairs(workspace:GetChildren()) do
+        if obj:IsA("Model") and obj:FindFirstChild("HumanoidRootPart") and obj ~= Character then
+            local enemyHRP = obj.HumanoidRootPart
+            if (enemyHRP.Position - HRP.Position).Magnitude <= 35 then
+                local knockback = Instance.new("BodyVelocity")
+                knockback.MaxForce = Vector3.new(1e5, 1e5, 1e5)
+                knockback.Velocity = (HRP.CFrame.LookVector * 120) + Vector3.new(0, 30, 0)
+                knockback.Parent = enemyHRP
+                Debris:AddItem(knockback, 0.5)
+            end
+        end
+    end
+
+    Debris:AddItem(redOrb, 0.4)
+    task.wait(5)
+    Cooldowns.ReversalRed = false
+end
+
+-- ==========================================
+-- MOVE 3: HOLLOW PURPLE (Ultimate Annihilation)
+-- Keybind: 3
+-- ==========================================
+local function CastHollowPurple()
+    if Cooldowns.HollowPurple then return end
+    Cooldowns.HollowPurple = true
+
+    ShowAbilityText("HOLLOW: PURPLE", Color3.fromRGB(180, 0, 255))
+
+    -- Charge Up
+    local purpleOrb = Instance.new("Part")
+    purpleOrb.Shape = Enum.PartType.Ball
+    purpleOrb.Size = Vector3.new(4, 4, 4)
+    purpleOrb.Material = Enum.Material.Neon
+    purpleOrb.Color = Color3.fromRGB(150, 0, 255)
+    purpleOrb.CanCollide = false
+    purpleOrb.Anchored = true
+    purpleOrb.CFrame = HRP.CFrame * CFrame.new(0, 2, -6)
+    purpleOrb.Parent = workspace
+
+    task.wait(0.8)
+
+    -- Fire Mass Orb Forward
+    local shootTween = TweenService:Create(purpleOrb, TweenInfo.new(1.2, Enum.EasingStyle.Quad, Enum.EasingDirection.Out), {
+        CFrame = purpleOrb.CFrame * CFrame.new(0, 0, -120),
+        Size = Vector3.new(25, 25, 25),
+        Transparency = 0.5
+    })
+    shootTween:Play()
+
+    -- Damage / Blast radius check during traversal
+    task.spawn(function()
+        for i = 1, 12 do
+            task.wait(0.1)
+            for _, obj in pairs(workspace:GetChildren()) do
+                if obj:IsA("Model") and obj:FindFirstChild("HumanoidRootPart") and obj ~= Character then
+                    local enemyHRP = obj.HumanoidRootPart
+                    if (enemyHRP.Position - purpleOrb.Position).Magnitude <= 20 then
+                        local launch = Instance.new("BodyVelocity")
+                        launch.MaxForce = Vector3.new(1e5, 1e5, 1e5)
+                        launch.Velocity = (purpleOrb.CFrame.LookVector * 150) + Vector3.new(0, 50, 0)
+                        launch.Parent = enemyHRP
+                        Debris:AddItem(launch, 0.5)
+                    end
+                end
+            end
+        end
+        purpleOrb:Destroy()
+    end)
+
+    task.wait(10)
+    Cooldowns.HollowPurple = false
+end
+
+-- ==========================================
+-- MOVE 4: INFINITY (Barrier Shield)
+-- Keybind: 4
+-- ==========================================
+local function ToggleInfinity()
+    if Cooldowns.Infinity then return end
+    Cooldowns.Infinity = true
+
+    ShowAbilityText("INFINITY", Color3.fromRGB(255, 255, 255))
+
+    local barrier = Instance.new("Part")
+    barrier.Shape = Enum.PartType.Ball
+    barrier.Size = Vector3.new(14, 14, 14)
+    barrier.Material = Enum.Material.ForceField
+    barrier.Color = Color3.fromRGB(200, 230, 255)
+    barrier.CanCollide = false
+    barrier.Anchored = false
+    barrier.Parent = Character
+
+    local weld = Instance.new("WeldConstraint")
+    weld.Part0 = HRP
+    weld.Part1 = barrier
+    weld.Parent = barrier
+    barrier.CFrame = HRP.CFrame
+
+    -- Repel incoming entities while Infinity is active
+    local startTime = tick()
+    while tick() - startTime < 4 do
+        task.wait(0.1)
+        for _, obj in pairs(workspace:GetChildren()) do
+            if obj:IsA("Model") and obj:FindFirstChild("HumanoidRootPart") and obj ~= Character then
+                local enemyHRP = obj.HumanoidRootPart
+                local dist = (enemyHRP.Position - HRP.Position).Magnitude
+                if dist < 10 then
+                    local push = Instance.new("BodyVelocity")
+                    push.MaxForce = Vector3.new(1e5, 1e5, 1e5)
+                    push.Velocity = (enemyHRP.Position - HRP.Position).Unit * 50
+                    push.Parent = enemyHRP
+                    Debris:AddItem(push, 0.2)
+                end
+            end
+        end
+    end
+
+    barrier:Destroy()
+    task.wait(6)
+    Cooldowns.Infinity = false
+end
+
+-- Keyboard Input Detection
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+    if gameProcessed then return end
+
+    if input.KeyCode == Enum.KeyCode.One then
+        CastLapseBlue()
+    elseif input.KeyCode == Enum.KeyCode.Two then
+        CastReversalRed()
+    elseif input.KeyCode == Enum.KeyCode.Three then
+        CastHollowPurple()
+    elseif input.KeyCode == Enum.KeyCode.Four then
+        ToggleInfinity()
+    end
+end)
+
+print("Gojo Moveset Script Loaded! Controls: 1 = Blue | 2 = Red | 3 = Purple | 4 = Infinity")
